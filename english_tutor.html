@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>FluentAI — 나만의 영어 튜터</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Playfair+Display:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --surface2: #1c1c27;
+    --surface3: #252535;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.15);
+    --text: #f0f0f5;
+    --text2: #9090a8;
+    --text3: #5a5a72;
+    --accent: #7c6af5;
+    --accent2: #a394ff;
+    --accent-bg: rgba(124,106,245,0.12);
+    --green: #3ecf8e;
+    --green-bg: rgba(62,207,142,0.1);
+    --amber: #f59e0b;
+    --amber-bg: rgba(245,158,11,0.1);
+    --red: #ef4444;
+    --red-bg: rgba(239,68,68,0.1);
+    --teal: #22d3ee;
+    --teal-bg: rgba(34,211,238,0.1);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── SCREENS ── */
+  .screen { display: none; min-height: 100vh; }
+  .screen.active { display: flex; flex-direction: column; }
+
+  /* ── HEADER ── */
+  .header {
+    padding: 16px 20px;
+    display: flex; align-items: center; gap: 12px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    position: sticky; top: 0; z-index: 100;
+  }
+  .header-back {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: var(--surface); border: 1px solid var(--border2);
+    color: var(--text2); cursor: pointer; font-size: 18px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all .15s;
+  }
+  .header-back:hover { background: var(--surface3); }
+  .header-title { font-size: 16px; font-weight: 500; flex: 1; }
+  .header-badge {
+    padding: 4px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 500; letter-spacing: .5px;
+    background: var(--accent-bg); color: var(--accent2);
+  }
+
+  /* ── SCROLLABLE CONTENT ── */
+  .content { flex: 1; overflow-y: auto; padding: 20px; }
+  .content::-webkit-scrollbar { width: 4px; }
+  .content::-webkit-scrollbar-track { background: transparent; }
+  .content::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 4px; }
+
+  /* ── HOME SCREEN ── */
+  .home-hero {
+    padding: 32px 20px 24px;
+    background: linear-gradient(180deg, rgba(124,106,245,0.06) 0%, transparent 100%);
+  }
+  .home-greeting { font-size: 13px; color: var(--text3); margin-bottom: 4px; }
+  .home-title { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 400; line-height: 1.3; }
+  .home-title span { color: var(--accent2); }
+  .streak-row {
+    display: flex; gap: 10px; padding: 0 20px; margin: 20px 0 8px;
+  }
+  .streak-card {
+    flex: 1; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 14px; text-align: center;
+  }
+  .streak-num { font-size: 24px; font-weight: 600; color: var(--accent2); }
+  .streak-label { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+  .section-label {
+    font-size: 11px; font-weight: 500; color: var(--text3);
+    letter-spacing: 1px; text-transform: uppercase;
+    padding: 0 20px; margin: 24px 0 12px;
+  }
+
+  /* ── TOPIC GRID ── */
+  .topics-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 10px; padding: 0 20px;
+  }
+  .topic-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 16px; cursor: pointer;
+    transition: all .2s; position: relative; overflow: hidden;
+  }
+  .topic-card:hover { border-color: var(--border2); background: var(--surface2); }
+  .topic-card:active { transform: scale(0.97); }
+  .topic-icon { font-size: 24px; margin-bottom: 10px; }
+  .topic-name { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+  .topic-count { font-size: 11px; color: var(--text3); }
+  .topic-card.selected { border-color: var(--accent); background: var(--accent-bg); }
+
+  /* ── RECENT / PROGRESS ── */
+  .lesson-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 20px; cursor: pointer;
+    border-bottom: 1px solid var(--border);
+    transition: background .15s;
+  }
+  .lesson-row:hover { background: var(--surface); }
+  .lesson-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .lesson-info { flex: 1; }
+  .lesson-title { font-size: 14px; font-weight: 500; }
+  .lesson-meta { font-size: 12px; color: var(--text3); margin-top: 2px; }
+  .lesson-score {
+    font-size: 13px; font-weight: 500; padding: 4px 10px;
+    border-radius: 20px; background: var(--green-bg); color: var(--green);
+  }
+
+  /* ── TOPIC DETAIL ── */
+  .topic-hero {
+    padding: 28px 20px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .topic-hero-icon { font-size: 40px; margin-bottom: 12px; }
+  .topic-hero-title { font-size: 22px; font-weight: 600; margin-bottom: 6px; }
+  .topic-hero-desc { font-size: 14px; color: var(--text2); line-height: 1.6; }
+
+  .subtopic-list { padding: 16px 20px; }
+  .subtopic-item {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 16px; margin-bottom: 10px;
+    cursor: pointer; transition: all .2s; display: flex; align-items: center; gap: 14px;
+  }
+  .subtopic-item:hover { border-color: var(--accent); background: var(--accent-bg); }
+  .subtopic-item:active { transform: scale(0.98); }
+  .subtopic-num {
+    width: 32px; height: 32px; border-radius: 10px;
+    background: var(--surface3); display: flex; align-items: center;
+    justify-content: center; font-size: 13px; font-weight: 500;
+    color: var(--text2); flex-shrink: 0;
+  }
+  .subtopic-info { flex: 1; }
+  .subtopic-name { font-size: 14px; font-weight: 500; }
+  .subtopic-level { font-size: 11px; color: var(--text3); margin-top: 3px; }
+  .subtopic-arrow { color: var(--text3); font-size: 18px; }
+
+  /* ── READING SCREEN ── */
+  .reading-passage {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 20px; margin-bottom: 16px;
+  }
+  .reading-passage h3 {
+    font-family: 'Playfair Display', serif; font-size: 18px;
+    margin-bottom: 12px; color: var(--text);
+  }
+  .reading-passage p {
+    font-size: 15px; line-height: 1.8; color: var(--text2);
+  }
+  .vocab-chip {
+    display: inline-block; background: var(--accent-bg); color: var(--accent2);
+    border: 1px solid rgba(124,106,245,0.2); border-radius: 6px;
+    padding: 2px 8px; font-size: 12px; margin: 2px; cursor: pointer;
+  }
+  .tts-controls {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 16px; margin-bottom: 16px;
+  }
+  .tts-label { font-size: 12px; color: var(--text3); margin-bottom: 12px; }
+  .voice-selector {
+    display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;
+  }
+  .voice-btn {
+    padding: 7px 14px; border-radius: 20px; font-size: 12px; font-weight: 500;
+    border: 1px solid var(--border2); background: var(--surface2);
+    color: var(--text2); cursor: pointer; transition: all .15s;
+  }
+  .voice-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .play-row { display: flex; gap: 10px; align-items: center; }
+  .play-btn {
+    width: 44px; height: 44px; border-radius: 12px; border: none;
+    background: var(--accent); color: #fff; font-size: 18px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: all .15s; flex-shrink: 0;
+  }
+  .play-btn:hover { background: var(--accent2); }
+  .play-btn:active { transform: scale(0.95); }
+  .speed-label { font-size: 13px; color: var(--text2); }
+  .speed-select {
+    background: var(--surface2); border: 1px solid var(--border2);
+    color: var(--text); padding: 6px 10px; border-radius: 8px; font-size: 13px;
+  }
+
+  /* ── LESSON SCREEN ── */
+  .lesson-header {
+    padding: 16px 20px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .progress-bar-wrap { flex: 1; height: 4px; background: var(--surface3); border-radius: 4px; }
+  .progress-bar-fill {
+    height: 100%; border-radius: 4px; background: var(--accent);
+    transition: width .4s ease;
+  }
+  .chat-area { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+  .chat-area::-webkit-scrollbar { display: none; }
+
+  .msg { display: flex; gap: 10px; animation: fadeUp .3s ease; }
+  .msg.user { flex-direction: row-reverse; }
+  @keyframes fadeUp { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform: none; } }
+
+  .avatar {
+    width: 36px; height: 36px; border-radius: 12px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 16px;
+  }
+  .avatar.tutor { background: var(--accent-bg); }
+  .avatar.user-av { background: var(--surface3); }
+
+  .bubble {
+    max-width: 78%; padding: 12px 16px; border-radius: 16px;
+    font-size: 14px; line-height: 1.7;
+  }
+  .bubble.tutor { background: var(--surface2); border: 1px solid var(--border); border-radius: 16px 16px 16px 4px; }
+  .bubble.user { background: var(--accent); color: #fff; border-radius: 16px 16px 4px 16px; }
+  .bubble.rephrased {
+    background: var(--green-bg); border: 1px solid rgba(62,207,142,0.2);
+    border-radius: 16px 16px 16px 4px;
+  }
+
+  .bubble-label { font-size: 10px; color: var(--text3); margin-bottom: 4px; text-transform: uppercase; letter-spacing: .5px; }
+  .bubble-label.green { color: var(--green); }
+  .bubble-label.amber { color: var(--amber); }
+
+  .speak-btn-area {
+    padding: 16px 20px;
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+  }
+  .speak-instructions { font-size: 12px; color: var(--text3); text-align: center; margin-bottom: 10px; }
+  .speak-row { display: flex; gap: 10px; align-items: center; }
+  .mic-btn {
+    width: 56px; height: 56px; border-radius: 16px; border: none;
+    background: var(--surface2); border: 1px solid var(--border2);
+    color: var(--text2); font-size: 22px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all .2s; flex-shrink: 0;
+  }
+  .mic-btn.recording {
+    background: var(--red-bg); border-color: var(--red);
+    color: var(--red); animation: pulse 1s infinite;
+  }
+  @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.3); } 50% { box-shadow: 0 0 0 8px rgba(239,68,68,0); } }
+  .transcript-input {
+    flex: 1; background: var(--surface2); border: 1px solid var(--border2);
+    border-radius: 14px; padding: 14px 16px; color: var(--text);
+    font-size: 14px; font-family: 'DM Sans', sans-serif; resize: none;
+    outline: none; transition: border .15s;
+  }
+  .transcript-input:focus { border-color: var(--accent); }
+  .send-btn {
+    width: 48px; height: 48px; border-radius: 14px; border: none;
+    background: var(--accent); color: #fff; font-size: 20px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: all .15s; flex-shrink: 0;
+  }
+  .send-btn:hover { background: var(--accent2); }
+  .send-btn:disabled { opacity: 0.4; cursor: default; }
+
+  /* ── TYPING INDICATOR ── */
+  .typing { display: flex; gap: 4px; padding: 4px 0; align-items: center; }
+  .typing span { width: 6px; height: 6px; border-radius: 50%; background: var(--text3); animation: bounce .9s infinite; }
+  .typing span:nth-child(2) { animation-delay: .15s; }
+  .typing span:nth-child(3) { animation-delay: .3s; }
+  @keyframes bounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-5px); } }
+
+  /* ── SUMMARY SCREEN ── */
+  .summary-hero {
+    padding: 32px 20px 24px; text-align: center;
+    background: linear-gradient(180deg, rgba(62,207,142,0.06) 0%, transparent 100%);
+  }
+  .summary-score-ring {
+    width: 100px; height: 100px; border-radius: 50%;
+    border: 3px solid var(--green); margin: 0 auto 16px;
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column;
+  }
+  .summary-score-num { font-size: 32px; font-weight: 600; color: var(--green); }
+  .summary-score-label { font-size: 11px; color: var(--text3); }
+  .summary-title { font-family: 'Playfair Display', serif; font-size: 22px; margin-bottom: 6px; }
+  .summary-subtitle { font-size: 14px; color: var(--text2); }
+
+  .summary-cards { padding: 0 20px; }
+  .summary-section {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 16px; margin-bottom: 12px;
+  }
+  .summary-section-title {
+    font-size: 12px; font-weight: 500; color: var(--text3);
+    text-transform: uppercase; letter-spacing: .8px; margin-bottom: 12px;
+  }
+  .phrase-card {
+    background: var(--surface2); border-radius: 10px;
+    padding: 12px; margin-bottom: 8px;
+  }
+  .phrase-original { font-size: 13px; color: var(--text3); margin-bottom: 4px; }
+  .phrase-better { font-size: 14px; color: var(--green); font-weight: 500; }
+
+  .drill-chip {
+    display: inline-block; background: var(--amber-bg); color: var(--amber);
+    border: 1px solid rgba(245,158,11,0.2); border-radius: 8px;
+    padding: 6px 12px; font-size: 13px; margin: 4px;
+  }
+
+  /* ── PRIMARY BUTTON ── */
+  .btn-primary {
+    width: 100%; padding: 16px; border-radius: 14px; border: none;
+    background: var(--accent); color: #fff; font-size: 16px; font-weight: 500;
+    font-family: 'DM Sans', sans-serif; cursor: pointer; transition: all .2s;
+  }
+  .btn-primary:hover { background: var(--accent2); }
+  .btn-secondary {
+    width: 100%; padding: 14px; border-radius: 14px;
+    border: 1px solid var(--border2); background: transparent;
+    color: var(--text2); font-size: 15px; font-weight: 500;
+    font-family: 'DM Sans', sans-serif; cursor: pointer; transition: all .2s; margin-top: 10px;
+  }
+  .btn-secondary:hover { background: var(--surface2); }
+
+  /* ── DIFFICULTY SELECTOR ── */
+  .diff-row { display: flex; gap: 8px; padding: 0 20px; margin-bottom: 16px; }
+  .diff-btn {
+    flex: 1; padding: 10px; border-radius: 10px;
+    border: 1px solid var(--border2); background: var(--surface);
+    color: var(--text2); font-size: 13px; cursor: pointer; text-align: center; transition: all .15s;
+  }
+  .diff-btn.active { background: var(--accent-bg); border-color: var(--accent); color: var(--accent2); font-weight: 500; }
+
+  /* ── LOADING ── */
+  .loading-overlay {
+    position: fixed; inset: 0; background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 16px; z-index: 999;
+  }
+  .loading-logo { font-family: 'Playfair Display', serif; font-size: 32px; color: var(--accent2); }
+  .loading-dots { display: flex; gap: 8px; }
+  .loading-dots span { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); animation: bounce .9s infinite; }
+  .loading-dots span:nth-child(2) { animation-delay: .2s; }
+  .loading-dots span:nth-child(3) { animation-delay: .4s; }
+
+  /* ── ONBOARDING ── */
+  .onboard-wrap { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 32px 24px; }
+  .onboard-icon { font-size: 64px; margin-bottom: 24px; text-align: center; }
+  .onboard-title { font-family: 'Playfair Display', serif; font-size: 30px; text-align: center; margin-bottom: 10px; }
+  .onboard-desc { font-size: 15px; color: var(--text2); text-align: center; line-height: 1.7; margin-bottom: 32px; }
+  .api-input {
+    background: var(--surface2); border: 1px solid var(--border2);
+    border-radius: 12px; padding: 14px 16px; color: var(--text);
+    font-size: 14px; font-family: 'DM Sans', sans-serif;
+    width: 100%; outline: none; margin-bottom: 12px; transition: border .15s;
+  }
+  .api-input:focus { border-color: var(--accent); }
+  .api-hint { font-size: 12px; color: var(--text3); text-align: center; margin-bottom: 24px; }
+
+  /* ── STATS MINI ── */
+  .stats-row { display: flex; gap: 8px; padding: 0 20px; margin-bottom: 8px; }
+  .stat-mini { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px; text-align: center; }
+  .stat-mini-num { font-size: 20px; font-weight: 600; color: var(--teal); }
+  .stat-mini-label { font-size: 10px; color: var(--text3); margin-top: 2px; }
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-logo">Fluent<span style="color:var(--green)">AI</span></div>
+  <div class="loading-dots"><span></span><span></span><span></span></div>
+</div>
+
+<!-- ONBOARDING SCREEN -->
+<div class="screen" id="screenOnboard">
+  <div class="onboard-wrap">
+    <div class="onboard-icon">🎙️</div>
+    <h1 class="onboard-title">FluentAI</h1>
+    <p class="onboard-desc">비즈니스, 투자, 테크 — 나만의 맥락으로<br>매일 5분, 영어가 쌓인다.</p>
+    <input type="text" class="api-input" id="apiKeyInput" placeholder="OpenAI API Key를 입력하세요 (sk-...)" />
+    <p class="api-hint">⚠ 키는 기기에만 저장됩니다. 외부로 전송되지 않아요.</p>
+    <button class="btn-primary" onclick="startApp()">시작하기 →</button>
+  </div>
+</div>
+
+<!-- HOME SCREEN -->
+<div class="screen" id="screenHome">
+  <div class="home-hero">
+    <p class="home-greeting" id="homeGreeting">안녕하세요 👋</p>
+    <h1 class="home-title">오늘도 <span id="streakWord">이어가요</span>,<br>영어 실력을.</h1>
+  </div>
+  <div class="streak-row">
+    <div class="streak-card">
+      <div class="streak-num" id="streakDays">0</div>
+      <div class="streak-label">연속 학습일</div>
+    </div>
+    <div class="streak-card">
+      <div class="streak-num" id="totalLessons">0</div>
+      <div class="streak-label">총 수업 수</div>
+    </div>
+    <div class="streak-card">
+      <div class="streak-num" id="totalMinutes">0</div>
+      <div class="streak-label">총 학습분</div>
+    </div>
+  </div>
+  <div class="section-label">주제 선택</div>
+  <div class="topics-grid" id="topicsGrid"></div>
+  <div class="section-label" id="recentLabel" style="display:none">최근 학습</div>
+  <div id="recentList"></div>
+</div>
+
+<!-- TOPIC DETAIL SCREEN -->
+<div class="screen" id="screenTopic">
+  <div class="header">
+    <button class="header-back" onclick="goHome()">←</button>
+    <span class="header-title" id="topicHeaderTitle">Topic</span>
+  </div>
+  <div class="content" style="padding:0">
+    <div class="topic-hero">
+      <div class="topic-hero-icon" id="topicDetailIcon"></div>
+      <h2 class="topic-hero-title" id="topicDetailTitle"></h2>
+      <p class="topic-hero-desc" id="topicDetailDesc"></p>
+    </div>
+    <div class="subtopic-list" id="subtopicList"></div>
+  </div>
+</div>
+
+<!-- READING SCREEN -->
+<div class="screen" id="screenReading">
+  <div class="header">
+    <button class="header-back" onclick="goToTopic()">←</button>
+    <span class="header-title" id="readingTitle"></span>
+    <span class="header-badge" id="readingLevel">Advanced</span>
+  </div>
+  <div class="content">
+    <div id="readingPassageWrap">
+      <div style="text-align:center;padding:40px 0;color:var(--text3)">
+        <div class="loading-dots" style="justify-content:center;margin-bottom:8px"><span></span><span></span><span></span></div>
+        <p style="font-size:13px">지문 생성 중...</p>
+      </div>
+    </div>
+    <div class="tts-controls">
+      <div class="tts-label">🔊 원어민 음성으로 듣기</div>
+      <div class="voice-selector" id="voiceSelector"></div>
+      <div class="play-row">
+        <button class="play-btn" id="playBtn" onclick="togglePlay()">▶</button>
+        <span class="speed-label">속도</span>
+        <select class="speed-select" id="speedSelect" onchange="updateSpeed()">
+          <option value="0.7">느리게 0.7×</option>
+          <option value="1.0" selected>보통 1.0×</option>
+          <option value="1.25">빠르게 1.25×</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-bottom:12px">
+      <div class="section-label" style="padding:0;margin:0 0 8px">난이도 선택</div>
+      <div class="diff-row" style="padding:0">
+        <div class="diff-btn active" onclick="setDiff(this,'Beginner')">Beginner</div>
+        <div class="diff-btn" onclick="setDiff(this,'Intermediate')">Intermediate</div>
+        <div class="diff-btn" onclick="setDiff(this,'Advanced')">Advanced</div>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="startLesson()">수업 시작 →</button>
+    <button class="btn-secondary" onclick="goToTopic()">← 주제 목록으로</button>
+  </div>
+</div>
+
+<!-- LESSON SCREEN -->
+<div class="screen" id="screenLesson">
+  <div class="lesson-header">
+    <button class="header-back" onclick="endLesson()" style="width:32px;height:32px;font-size:16px">×</button>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="lessonProgress" style="width:10%"></div>
+    </div>
+    <span style="font-size:12px;color:var(--text3);white-space:nowrap" id="lessonTimer">0:00</span>
+  </div>
+  <div class="chat-area" id="chatArea"></div>
+  <div class="speak-btn-area">
+    <div class="speak-instructions" id="speakInstructions">마이크 버튼을 누르고 영어로 말하세요</div>
+    <div class="speak-row">
+      <button class="mic-btn" id="micBtn" onclick="toggleMic()">🎙</button>
+      <textarea class="transcript-input" id="transcriptInput" rows="2" placeholder="또는 여기에 직접 입력..."></textarea>
+      <button class="send-btn" id="sendBtn" onclick="sendUserResponse()">↑</button>
+    </div>
+  </div>
+</div>
+
+<!-- SUMMARY SCREEN -->
+<div class="screen" id="screenSummary">
+  <div class="header">
+    <button class="header-back" onclick="goHome()">×</button>
+    <span class="header-title">수업 요약</span>
+  </div>
+  <div class="content" style="padding:0">
+    <div class="summary-hero">
+      <div class="summary-score-ring">
+        <div class="summary-score-num" id="summaryScore">85</div>
+        <div class="summary-score-label">점수</div>
+      </div>
+      <h2 class="summary-title">오늘도 잘하셨어요! 🎉</h2>
+      <p class="summary-subtitle" id="summarySubtitle">Intermediate · 8분 학습</p>
+    </div>
+    <div class="summary-cards" id="summaryCards"></div>
+    <div style="padding:0 20px 40px">
+      <button class="btn-primary" onclick="goHome()">홈으로</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════
+const TOPICS = [
+  { id:'business', icon:'💼', name:'Business', desc:'협상, 미팅, 프레젠테이션, 리더십 커뮤니케이션', color:'#7c6af5',
+    subs:[
+      {name:'Negotiation Tactics', level:'Advanced', key:'negotiation tactics in business'},
+      {name:'Board Presentations', level:'Advanced', key:'presenting to a board of directors'},
+      {name:'Performance Reviews', level:'Intermediate', key:'conducting employee performance reviews'},
+      {name:'Client Pitches', level:'Intermediate', key:'pitching a product to a client'},
+    ]},
+  { id:'invest', icon:'📈', name:'Investment', desc:'시장 분석, 포트폴리오, 중앙은행 정책, 거시경제', color:'#3ecf8e',
+    subs:[
+      {name:'Fed Rate Decisions', level:'Advanced', key:'Federal Reserve interest rate policy decisions'},
+      {name:'Portfolio Strategy', level:'Advanced', key:'portfolio diversification and risk management'},
+      {name:'Earnings Calls', level:'Intermediate', key:'interpreting company earnings calls'},
+      {name:'AI Infrastructure Theme', level:'Advanced', key:'AI power infrastructure investment thesis'},
+    ]},
+  { id:'tech', icon:'🤖', name:'Tech & AI', desc:'AI 트렌드, 제품 전략, 스타트업, 테크 리더십', color:'#22d3ee',
+    subs:[
+      {name:'AI Product Strategy', level:'Advanced', key:'AI product strategy and roadmap'},
+      {name:'LLM Business Use Cases', level:'Intermediate', key:'large language model business applications'},
+      {name:'Tech Layoffs & Talent', level:'Intermediate', key:'tech industry layoffs and talent strategy'},
+      {name:'Ad Tech Evolution', level:'Advanced', key:'advertising technology and programmatic ads'},
+    ]},
+  { id:'sports', icon:'⚽', name:'Sports', desc:'스포츠 비즈니스, 전략, 선수 인터뷰 표현', color:'#f59e0b',
+    subs:[
+      {name:'Sports Analytics', level:'Intermediate', key:'sports analytics and data in football'},
+      {name:'Athlete Interviews', level:'Beginner', key:'athlete post-game interview language'},
+      {name:'Sports Business', level:'Advanced', key:'sports broadcasting and media rights business'},
+    ]},
+  { id:'economy', icon:'🏦', name:'Economy', desc:'글로벌 경제, 무역, 환율, 통화정책', color:'#ef4444',
+    subs:[
+      {name:'Global Trade War', level:'Advanced', key:'US China trade war and tariffs impact'},
+      {name:'Inflation & CPI', level:'Intermediate', key:'inflation consumer price index analysis'},
+      {name:'Korean Economy', level:'Intermediate', key:'Korean economy export and semiconductor industry'},
+    ]},
+  { id:'media', icon:'📱', name:'Media & Ads', desc:'디지털 광고, 플랫폼 전략, 콘텐츠 마케팅', color:'#ec4899',
+    subs:[
+      {name:'Programmatic Advertising', level:'Advanced', key:'programmatic advertising and DSP SSP'},
+      {name:'Social Media Strategy', level:'Intermediate', key:'social media platform advertising strategy'},
+      {name:'Video Ad Trends', level:'Intermediate', key:'CTV OTT video advertising trends'},
+    ]},
+];
+
+// ═══════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════
+let state = {
+  apiKey: '',
+  currentTopic: null,
+  currentSub: null,
+  currentPassage: '',
+  currentScript: '',
+  difficulty: 'Intermediate',
+  messages: [], // lesson chat history
+  lessonStart: null,
+  lessonData: { exchanges: [], corrections: [], phrases: [] },
+  ttsVoice: null,
+  ttsRate: 1.0,
+  recognition: null,
+  isRecording: false,
+  lessonTimerInterval: null,
+  userProfile: {}
+};
+
+// Persist
+const LS = {
+  get: k => { try { return JSON.parse(localStorage.getItem('fluent_'+k)); } catch(e) { return null; } },
+  set: (k,v) => localStorage.setItem('fluent_'+k, JSON.stringify(v)),
+};
+
+// ═══════════════════════════════════════
+// BOOT
+// ═══════════════════════════════════════
+window.onload = () => {
+  setTimeout(() => {
+    document.getElementById('loadingOverlay').style.display = 'none';
+    state.apiKey = LS.get('apikey') || '';
+    state.userProfile = LS.get('profile') || { streak:0, totalLessons:0, totalMinutes:0, lastDate:'', drills:[], history:[] };
+    if (state.apiKey) { showHome(); }
+    else { show('screenOnboard'); }
+  }, 1200);
+};
+
+function startApp() {
+  const k = document.getElementById('apiKeyInput').value.trim();
+  if (!k) { alert('API 키를 입력해 주세요.'); return; }
+  state.apiKey = k;
+  LS.set('apikey', k);
+  showHome();
+}
+
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+// ═══════════════════════════════════════
+// HOME
+// ═══════════════════════════════════════
+function showHome() {
+  const p = state.userProfile;
+  const h = new Date().getHours();
+  const greet = h<12 ? '좋은 아침이에요 ☀️' : h<18 ? '좋은 오후예요 🌤' : '좋은 저녁이에요 🌙';
+  document.getElementById('homeGreeting').textContent = greet;
+  document.getElementById('streakDays').textContent = p.streak||0;
+  document.getElementById('totalLessons').textContent = p.totalLessons||0;
+  document.getElementById('totalMinutes').textContent = p.totalMinutes||0;
+
+  // Render topics
+  const grid = document.getElementById('topicsGrid');
+  grid.innerHTML = TOPICS.map(t => `
+    <div class="topic-card" onclick="openTopic('${t.id}')">
+      <div class="topic-icon">${t.icon}</div>
+      <div class="topic-name">${t.name}</div>
+      <div class="topic-count">${t.subs.length}개 주제</div>
+    </div>`).join('');
+
+  // Recent
+  if (p.history && p.history.length) {
+    document.getElementById('recentLabel').style.display='block';
+    document.getElementById('recentList').innerHTML = p.history.slice(-5).reverse().map(h => `
+      <div class="lesson-row">
+        <div class="lesson-dot" style="background:var(--green)"></div>
+        <div class="lesson-info">
+          <div class="lesson-title">${h.subName}</div>
+          <div class="lesson-meta">${h.date} · ${h.duration}분 · ${h.difficulty}</div>
+        </div>
+        <div class="lesson-score">${h.score}</div>
+      </div>`).join('');
+  }
+  show('screenHome');
+}
+
+// ═══════════════════════════════════════
+// TOPIC
+// ═══════════════════════════════════════
+function openTopic(id) {
+  const t = TOPICS.find(x=>x.id===id);
+  state.currentTopic = t;
+  document.getElementById('topicHeaderTitle').textContent = t.name;
+  document.getElementById('topicDetailIcon').textContent = t.icon;
+  document.getElementById('topicDetailTitle').textContent = t.name;
+  document.getElementById('topicDetailDesc').textContent = t.desc;
+  document.getElementById('subtopicList').innerHTML = t.subs.map((s,i) => `
+    <div class="subtopic-item" onclick="openReading(${i})">
+      <div class="subtopic-num">${i+1}</div>
+      <div class="subtopic-info">
+        <div class="subtopic-name">${s.name}</div>
+        <div class="subtopic-level">🎯 ${s.level}</div>
+      </div>
+      <div class="subtopic-arrow">›</div>
+    </div>`).join('');
+  show('screenTopic');
+}
+
+function goHome() { showHome(); }
+function goToTopic() { show('screenTopic'); }
+
+// ═══════════════════════════════════════
+// READING
+// ═══════════════════════════════════════
+async function openReading(subIdx) {
+  const sub = state.currentTopic.subs[subIdx];
+  state.currentSub = sub;
+  state.difficulty = sub.level;
+  document.getElementById('readingTitle').textContent = sub.name;
+  document.getElementById('readingLevel').textContent = sub.level;
+  document.getElementById('readingPassageWrap').innerHTML = `
+    <div style="text-align:center;padding:40px 0;color:var(--text3)">
+      <div class="loading-dots" style="justify-content:center;margin-bottom:8px"><span></span><span></span><span></span></div>
+      <p style="font-size:13px">지문 생성 중...</p>
+    </div>`;
+  show('screenReading');
+  initVoiceSelector();
+  await generatePassage(sub);
+}
+
+async function generatePassage(sub) {
+  try {
+    const resp = await callClaude([{role:'user', content:`Generate a concise English reading passage (150-200 words) about "${sub.key}" for a ${sub.level} learner. 
+Format as JSON: {"title":"...","passage":"...","keyVocab":["word1","word2","word3","word4","word5"]}`}], 
+    `You are an expert English language teacher. Generate engaging, business-relevant content. Always respond with valid JSON only.`);
+    
+    let data;
+    try { data = JSON.parse(resp); } 
+    catch(e) { const m = resp.match(/\{[\s\S]*\}/); data = m ? JSON.parse(m[0]) : {title:sub.name, passage:resp, keyVocab:[]}; }
+    
+    state.currentPassage = data.passage;
+    state.currentScript = data.passage;
+    
+    document.getElementById('readingPassageWrap').innerHTML = `
+      <div class="reading-passage">
+        <h3>${data.title || sub.name}</h3>
+        <p>${data.passage}</p>
+        ${data.keyVocab?.length ? `<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.8px">핵심 표현</div>
+          ${data.keyVocab.map(v=>`<span class="vocab-chip">${v}</span>`).join('')}
+        </div>` : ''}
+      </div>`;
+  } catch(e) {
+    document.getElementById('readingPassageWrap').innerHTML = `<div style="padding:20px;color:var(--red);text-align:center">오류가 발생했습니다. API 키를 확인해 주세요.<br><small>${e.message}</small></div>`;
+  }
+}
+
+function initVoiceSelector() {
+  const voices = [
+    {lang:'en-US', label:'🇺🇸 US'},
+    {lang:'en-GB', label:'🇬🇧 UK'},
+    {lang:'en-AU', label:'🇦🇺 AU'},
+    {lang:'en-IN', label:'🇮🇳 IN'},
+  ];
+  const vs = document.getElementById('voiceSelector');
+  vs.innerHTML = voices.map((v,i)=>`<button class="voice-btn ${i===0?'active':''}" onclick="selectVoice(this,'${v.lang}')">${v.label}</button>`).join('');
+  selectVoice(vs.querySelector('.voice-btn'), 'en-US');
+}
+
+function selectVoice(btn, lang) {
+  document.querySelectorAll('.voice-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const voices = speechSynthesis.getVoices();
+  state.ttsVoice = voices.find(v=>v.lang.startsWith(lang.split('-')[0]+'-'+lang.split('-')[1])) 
+    || voices.find(v=>v.lang.startsWith(lang.split('-')[0])) || null;
+  state.ttsLang = lang;
+}
+
+let isSpeaking = false;
+function togglePlay() {
+  if (isSpeaking) { speechSynthesis.cancel(); isSpeaking=false; document.getElementById('playBtn').textContent='▶'; return; }
+  const text = state.currentPassage;
+  if (!text) return;
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.voice = state.ttsVoice;
+  utter.lang = state.ttsLang || 'en-US';
+  utter.rate = state.ttsRate;
+  utter.onend = () => { isSpeaking=false; document.getElementById('playBtn').textContent='▶'; };
+  speechSynthesis.speak(utter);
+  isSpeaking=true;
+  document.getElementById('playBtn').textContent='⏹';
+}
+
+function updateSpeed() {
+  state.ttsRate = parseFloat(document.getElementById('speedSelect').value);
+}
+
+function setDiff(btn, diff) {
+  document.querySelectorAll('.diff-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  state.difficulty = diff;
+  document.getElementById('readingLevel').textContent = diff;
+}
+
+// ═══════════════════════════════════════
+// LESSON
+// ═══════════════════════════════════════
+async function startLesson() {
+  speechSynthesis.cancel();
+  state.messages = [];
+  state.lessonData = { exchanges:[], corrections:[], phrases:[] };
+  state.lessonStart = Date.now();
+  document.getElementById('chatArea').innerHTML = '';
+  document.getElementById('lessonProgress').style.width = '10%';
+  document.getElementById('transcriptInput').value = '';
+  show('screenLesson');
+  startLessonTimer();
+  
+  // First tutor message
+  const systemPrompt = buildSystemPrompt();
+  const firstMsg = await callClaude([{role:'user',content:'Start the lesson now.'}], systemPrompt);
+  addMsg('tutor', firstMsg);
+  speakText(firstMsg);
+  state.messages.push({role:'assistant',content:firstMsg});
+  document.getElementById('lessonProgress').style.width = '20%';
+}
+
+function buildSystemPrompt() {
+  const p = state.userProfile;
+  const drills = p.drills?.slice(-10).join(', ') || 'none yet';
+  return `You are an expert English conversation tutor. The student is a Korean executive (EVP at NAVER, leading Ad Business Strategy).
+Topic: "${state.currentSub?.name}" — Context: "${state.currentPassage?.substring(0,300)}"
+Difficulty: ${state.difficulty}
+Student's known weak areas/drills: ${drills}
+
+LESSON FLOW:
+1. Start with a warm welcome and ask a simple question about the passage topic
+2. After student responds, ask follow-up questions (opinions, scenarios, deeper analysis)
+3. After each student response, briefly rephrase/improve their answer in a "natural way to say this" style
+4. Mix: comprehension, opinion, hypothetical, professional scenario questions
+5. Keep energy positive and encouraging
+
+IMPORTANT:
+- Each of your messages should be 2-4 sentences max — stay conversational
+- After student answers, always include a "💬 Natural version:" rephrasing of their answer
+- Then ask the next question
+- Track if student struggles with grammar patterns and gently note them
+- For Advanced: use sophisticated vocabulary, complex scenarios
+- For Intermediate: clear language, relatable scenarios
+- For Beginner: simple sentences, lots of encouragement`;
+}
+
+function startLessonTimer() {
+  let secs = 0;
+  state.lessonTimerInterval = setInterval(()=>{
+    secs++;
+    const m = Math.floor(secs/60), s = secs%60;
+    document.getElementById('lessonTimer').textContent = `${m}:${s.toString().padStart(2,'0')}`;
+    const pct = Math.min(10 + (secs/600)*80, 90);
+    document.getElementById('lessonProgress').style.width = pct+'%';
+  },1000);
+}
+
+function addMsg(role, text, label='') {
+  const area = document.getElementById('chatArea');
+  const div = document.createElement('div');
+  div.className = 'msg ' + (role==='user'?'user':'');
+  const isRephrased = text.includes('💬 Natural version:') || label==='rephrased';
+  div.innerHTML = `
+    <div class="avatar ${role==='user'?'user-av':'tutor'}">${role==='user'?'👤':'🤖'}</div>
+    <div>
+      ${label ? `<div class="bubble-label ${label==='green'?'green':label==='amber'?'amber':''}">${label==='rephrased'?'✨ Claude의 제안':label==='user'?'나의 답변':''}</div>` : ''}
+      <div class="bubble ${role==='user'?'user':isRephrased?'rephrased':'tutor'}">${text.replace(/\n/g,'<br>')}</div>
+    </div>`;
+  area.appendChild(div);
+  area.scrollTop = area.scrollHeight;
+}
+
+function addTyping() {
+  const area = document.getElementById('chatArea');
+  const div = document.createElement('div');
+  div.className = 'msg'; div.id = 'typingIndicator';
+  div.innerHTML = `<div class="avatar tutor">🤖</div><div class="bubble tutor"><div class="typing"><span></span><span></span><span></span></div></div>`;
+  area.appendChild(div);
+  area.scrollTop = area.scrollHeight;
+}
+function removeTyping() { const el=document.getElementById('typingIndicator'); if(el) el.remove(); }
+
+// SPEECH RECOGNITION
+function toggleMic() {
+  if (state.isRecording) { stopMic(); return; }
+  if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+    document.getElementById('speakInstructions').textContent = '이 브라우저는 음성인식을 지원하지 않아요. 직접 입력해 주세요.';
+    return;
+  }
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  state.recognition = new SR();
+  state.recognition.lang = 'en-US';
+  state.recognition.continuous = true;
+  state.recognition.interimResults = true;
+  state.recognition.onresult = e => {
+    let interim='', final='';
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      if(e.results[i].isFinal) final+=e.results[i][0].transcript;
+      else interim+=e.results[i][0].transcript;
+    }
+    document.getElementById('transcriptInput').value = (document.getElementById('transcriptInput').value+final) || interim;
+  };
+  state.recognition.onerror = e => { stopMic(); };
+  state.recognition.start();
+  state.isRecording = true;
+  document.getElementById('micBtn').classList.add('recording');
+  document.getElementById('micBtn').textContent = '⏹';
+  document.getElementById('speakInstructions').textContent = '🔴 녹음 중... 말을 마치면 다시 누르세요';
+}
+
+function stopMic() {
+  if (state.recognition) { state.recognition.stop(); state.recognition=null; }
+  state.isRecording = false;
+  document.getElementById('micBtn').classList.remove('recording');
+  document.getElementById('micBtn').textContent = '🎙';
+  document.getElementById('speakInstructions').textContent = '마이크 버튼을 누르고 영어로 말하세요';
+}
+
+async function sendUserResponse() {
+  const text = document.getElementById('transcriptInput').value.trim();
+  if (!text) return;
+  stopMic();
+  document.getElementById('transcriptInput').value = '';
+  document.getElementById('sendBtn').disabled = true;
+
+  addMsg('user', text, 'user');
+  state.messages.push({role:'user',content:text});
+  state.lessonData.exchanges.push({user:text});
+
+  addTyping();
+  const systemPrompt = buildSystemPrompt();
+  const response = await callClaude(state.messages, systemPrompt);
+  removeTyping();
+
+  addMsg('tutor', response);
+  speakText(response);
+  state.messages.push({role:'assistant',content:response});
+
+  // Extract rephrasing if present
+  const rephMatch = response.match(/💬 Natural version:\s*"?([^"\n]+)"?/i);
+  if (rephMatch) {
+    state.lessonData.phrases.push({original:text, better:rephMatch[1].trim()});
+  }
+
+  document.getElementById('sendBtn').disabled = false;
+}
+
+function speakText(text) {
+  const clean = text.replace(/💬[^\n]*/,'').replace(/[*#]/g,'').trim();
+  if (!clean) return;
+  const utter = new SpeechSynthesisUtterance(clean);
+  utter.voice = state.ttsVoice;
+  utter.lang = state.ttsLang || 'en-US';
+  utter.rate = state.ttsRate;
+  speechSynthesis.speak(utter);
+}
+
+async function endLesson() {
+  if (!confirm('수업을 종료할까요?')) return;
+  speechSynthesis.cancel();
+  stopMic();
+  clearInterval(state.lessonTimerInterval);
+  await showSummary();
+}
+
+// ═══════════════════════════════════════
+// SUMMARY
+// ═══════════════════════════════════════
+async function showSummary() {
+  const duration = Math.round((Date.now() - state.lessonStart) / 60000);
+  const exchangeCount = state.lessonData.exchanges.length;
+  const score = Math.min(95, 60 + exchangeCount*5 + (state.lessonData.phrases.length*3));
+
+  document.getElementById('summaryScore').textContent = score;
+  document.getElementById('summarySubtitle').textContent = `${state.difficulty} · ${duration}분 학습 · ${exchangeCount}번 대화`;
+  show('screenSummary');
+
+  // Generate AI summary
+  let aiAnalysis = {strengths:['Active participation','Clear communication'],improvements:['Use more complex sentence structures'],newDrills:['Present perfect tense','Business idioms'],overallFeedback:'Good effort today!'};
+  
+  if (state.messages.length > 2) {
+    try {
+      const analysisResp = await callClaude([{role:'user',content:`Analyze this English lesson conversation and respond ONLY with JSON:
+{"strengths":["...","..."],"improvements":["...","..."],"newDrills":["expression1","expression2","expression3"],"overallFeedback":"2 sentences of encouragement"}
+Conversation: ${JSON.stringify(state.messages.slice(0,10))}`}],
+      'You are an English teacher analyzing a student\'s lesson. Respond only with valid JSON.');
+      try { aiAnalysis = JSON.parse(analysisResp); }
+      catch(e) { const m=analysisResp.match(/\{[\s\S]*\}/); if(m) aiAnalysis=JSON.parse(m[0]); }
+    } catch(e) {}
+  }
+
+  // Build summary cards
+  let html = '';
+  html += `<div class="summary-section">
+    <div class="summary-section-title">💪 잘한 점</div>
+    ${(aiAnalysis.strengths||[]).map(s=>`<div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:14px;color:var(--green)">✓ ${s}</div>`).join('')}
+  </div>`;
+
+  if (state.lessonData.phrases.length) {
+    html += `<div class="summary-section">
+      <div class="summary-section-title">✨ 더 자연스러운 표현</div>
+      ${state.lessonData.phrases.map(p=>`<div class="phrase-card">
+        <div class="phrase-original">내가 한 말: "${p.original?.substring(0,80)}"</div>
+        <div class="phrase-better">→ ${p.better}</div>
+      </div>`).join('')}
+    </div>`;
+  }
+
+  html += `<div class="summary-section">
+    <div class="summary-section-title">📌 연습할 표현 드릴</div>
+    <div>${(aiAnalysis.newDrills||[]).map(d=>`<span class="drill-chip">${d}</span>`).join('')}</div>
+  </div>`;
+
+  html += `<div class="summary-section">
+    <div class="summary-section-title">💬 오늘의 피드백</div>
+    <p style="font-size:14px;line-height:1.7;color:var(--text2)">${aiAnalysis.overallFeedback||''}</p>
+  </div>`;
+
+  document.getElementById('summaryCards').innerHTML = html;
+
+  // Save to profile
+  const p = state.userProfile;
+  const today = new Date().toLocaleDateString('ko-KR');
+  if (p.lastDate !== today) { p.streak = (p.streak||0)+1; p.lastDate=today; }
+  p.totalLessons = (p.totalLessons||0)+1;
+  p.totalMinutes = (p.totalMinutes||0)+duration;
+  p.drills = [...(p.drills||[]), ...(aiAnalysis.newDrills||[])].slice(-30);
+  p.history = [...(p.history||[]), {
+    subName: state.currentSub?.name, date:today, duration, difficulty:state.difficulty, score
+  }].slice(-50);
+  LS.set('profile', p);
+  state.userProfile = p;
+}
+
+// ═══════════════════════════════════════
+// OPENAI API
+// ═══════════════════════════════════════
+async function callClaude(messages, system='You are a helpful assistant.') {
+  const openaiMessages = [{role:'system', content:system}, ...messages];
+  const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+state.apiKey},
+    body:JSON.stringify({ model:'gpt-4o', max_tokens:800, messages:openaiMessages })
+  });
+  if (!resp.ok) { const e=await resp.json(); throw new Error(e.error?.message||'API error'); }
+  const data = await resp.json();
+  return data.choices[0].message.content;
+}
+</script>
+</body>
+</html>
